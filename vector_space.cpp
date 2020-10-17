@@ -13,8 +13,8 @@ class CoordSys {
 	plot coords0_, coords1_;
 	double scaleX_, scaleY_;
 	const char* signature_;
-	double* to_pixels(plot coords);
 public:
+	double* to_pixels(plot coords);
 	void draw_point(plot coords, COLORREF color_of_point);
 	void draw_circle(plot coords, double radius, COLORREF color_of_circle);
 	void draw_line(plot coords0, plot coords1, COLORREF color_of_line);
@@ -64,20 +64,17 @@ int main() {
 	vector_space.draw_axis();
 	vector_space.set_color_back();
 	vector_space.write_signature();
-	Vector a({ -300,-200 });
-	Vector b({ -150,-100 });
-	a.draw_vector({ 20,20 }, &vector_space);
-	b.draw_vector({ 20,20 }, &vector_space);
-	a.turn_vector_clock_wise(3 * pi / 2);
-	b.turn_vector_clock_wise(3 * pi / 2);
-	a.draw_vector({ 20,20 }, &vector_space);
-	b.draw_vector({ 20,20 }, &vector_space);
-	a.turn_vector_clock_wise(3.1 * pi / 2);
-	b.turn_vector_clock_wise(3.1 * pi / 2);
-	a.draw_vector({ 20,20 }, &vector_space);
-	b.draw_vector({ 20,20 }, &vector_space);
-	vector_space.draw_circle({ 20,20 }, a.length(), TX_LIGHTGRAY);
-	vector_space.draw_circle({ 20,20 }, b.length(), TX_LIGHTGRAY);
+	plot null_coords = { 0, 0 };
+	while (txMouseButtons() != 3) {
+		if (txMouseButtons() == 1) {
+			plot coords_of_vector = { -600 + txMouseX() - null_coords.x, 350 - txMouseY() - null_coords.y };
+			Vector a(coords_of_vector);
+			a.draw_vector(null_coords, &vector_space);
+		}
+		if (txMouseButtons() == 2) {
+			null_coords = { -600 + txMouseX(), 350 - txMouseY() };
+		}
+	}
 }
 
 
@@ -103,7 +100,7 @@ void Vector::turn_vector_clock_wise(double degree) {
 
 
 void Vector::normalization() {
-	Vector temp_vector(coords_);
+	Vector temp_vector = *this;
 	double length = temp_vector.length();
 	temp_vector = 20 / length * temp_vector;
 	coords_.x = temp_vector.coords_.x;
@@ -111,7 +108,7 @@ void Vector::normalization() {
 }
 
 
-void Vector::draw_vector(plot start_coords, CoordSys* vector_space) {
+/*void Vector::draw_vector(plot start_coords, CoordSys* vector_space) {
 	plot end_coords = { coords_.x + start_coords.x, coords_.y + start_coords.y };
 	(*vector_space).draw_line(start_coords, end_coords, RGB(0, 191, 255));
 	(*vector_space).draw_point(start_coords, RGB(255, 0, 0));
@@ -125,7 +122,7 @@ void Vector::draw_vector(plot start_coords, CoordSys* vector_space) {
 	plot end_of_arrow2 = { vector_for_arrow.coords_.x + end_coords.x, vector_for_arrow.coords_.y + end_coords.y };
 	(*vector_space).draw_line(end_coords, end_of_arrow2, TX_BLACK);
 }
-
+*/
 
 double* CoordSys::to_pixels(plot coords) {
 	plot start_of_coord = { coords1_.x / 2, coords1_.y / 2 };
@@ -174,6 +171,7 @@ void CoordSys::draw_line(plot coords0, plot coords1, COLORREF color_of_line) {
 		rec_coord1[0] >= coords0_.x) {
 		txLine(rec_coord0[0], rec_coord0[1], rec_coord1[0], rec_coord1[1]);
 	}
+	txLine(rec_coord0[0], rec_coord0[1], rec_coord1[0], rec_coord1[1]);
 	delete[] rec_coord0;
 	delete[] rec_coord1;
 }
@@ -236,3 +234,22 @@ double operator * (Vector a, Vector b) {
 }
 
 
+void Vector::draw_vector(plot start_coords, CoordSys* vector_space) {
+	plot end_coords = { coords_.x + start_coords.x, coords_.y + start_coords.y };
+	(*vector_space).draw_line(start_coords, end_coords, RGB(0, 191, 255));
+	(*vector_space).draw_point(start_coords, RGB(255, 0, 0));
+	Vector vector_for_arrow1({ -coords_.y, coords_.x });
+	Vector vector_for_arrow2({ coords_.y, -coords_.x });
+	Vector reverse_vector = -1 * *this;
+	reverse_vector.normalization();
+	vector_for_arrow1.normalization();
+	vector_for_arrow2.normalization();
+	Vector arrow1 = reverse_vector + vector_for_arrow1;
+	Vector arrow2 = reverse_vector + vector_for_arrow2;
+	arrow1.normalization();
+	arrow2.normalization();
+	plot end_of_arrow1 = { arrow1.coords_.x + end_coords.x, arrow1.coords_.y + end_coords.y };
+	plot end_of_arrow2 = { arrow2.coords_.x + end_coords.x, arrow2.coords_.y + end_coords.y };
+	(*vector_space).draw_line(end_coords, end_of_arrow1, TX_BLACK);
+	(*vector_space).draw_line(end_coords, end_of_arrow2, TX_BLACK);
+}
